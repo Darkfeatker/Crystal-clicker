@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10172b">
+  <title>Кристалл-кликер</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #10172b;
+      --panel: rgba(27, 37, 64, .9);
+      --panel-light: #26375c;
+      --text: #f4f7ff;
+      --muted: #aab7d5;
+      --gold: #ffd166;
+      --cyan: #7ce8f5;
+      --green: #9be7a1;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background: radial-gradient(ellipse at 50% 5%, #293e70 0%, var(--bg) 60%);
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    button { font: inherit; }
+    .wrap { width: min(1080px, 100%); margin: 0 auto; padding: 24px 18px 40px; }
+    header { display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 20px; }
+    h1 { margin: 0; font-size: clamp(1.55rem, 4vw, 2.25rem); letter-spacing: -.03em; }
+    .subtitle { color: var(--muted); margin-top: 4px; }
+    .reset { border: 1px solid #536486; background: transparent; color: var(--muted); border-radius: 12px; padding: 9px 12px; cursor: pointer; }
+    .reset:hover { color: var(--text); border-color: var(--cyan); }
+    .layout { display: grid; grid-template-columns: 1.1fr .9fr; gap: 18px; }
+    .panel { background: var(--panel); border: 1px solid #455578; border-radius: 22px; padding: clamp(18px, 4vw, 28px); box-shadow: 0 18px 60px #070b1680; }
+    .mine { min-height: 520px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; overflow: hidden; position: relative; }
+    .mine::before { content: ""; position: absolute; width: 340px; height: 340px; background: #74dff522; filter: blur(35px); border-radius: 50%; pointer-events: none; }
+    .balance { position: relative; font-size: clamp(2.2rem, 7vw, 3.7rem); font-weight: 800; color: var(--gold); text-shadow: 0 0 28px #ffcf5b44; }
+    .balance-label { color: var(--muted); margin-top: -2px; }
+    .crystal-button { position: relative; border: 0; background: transparent; cursor: pointer; padding: 18px; margin: 14px 0; transition: transform .08s ease; touch-action: manipulation; }
+    .crystal-button:hover { transform: scale(1.04); }
+    .crystal-button:active { transform: scale(.94); }
+    .crystal { width: clamp(150px, 38vw, 230px); aspect-ratio: 1; display: grid; place-items: center; font-size: clamp(6rem, 19vw, 10rem); filter: drop-shadow(0 12px 30px #5de5ff66); user-select: none; }
+    .tap-hint { color: var(--muted); }
+    .stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 18px; }
+    .pill { border: 1px solid #485a7c; background: #ffffff08; padding: 8px 12px; border-radius: 999px; color: var(--muted); }
+    .pill b { color: var(--text); }
+    .shop-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom: 6px; }
+    h2 { margin: 0; font-size: 1.4rem; }
+    .shop-note { color: var(--muted); font-size: .92rem; margin: 7px 0 18px; }
+    .items { display: grid; gap: 11px; }
+    .item { display: grid; grid-template-columns: 48px 1fr auto; align-items: center; gap: 12px; background: #ffffff08; border: 1px solid #3d4d6d; border-radius: 16px; padding: 12px; }
+    .item-icon { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 13px; background: var(--panel-light); font-size: 1.55rem; }
+    .item h3 { margin: 0 0 3px; font-size: 1rem; }
+    .item p { margin: 0; font-size: .82rem; color: var(--muted); line-height: 1.35; }
+    .buy { min-width: 98px; border: 0; border-radius: 12px; background: var(--cyan); color: #0b1a2a; font-weight: 800; padding: 10px 11px; cursor: pointer; }
+    .buy:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
+    .buy:disabled { cursor: not-allowed; opacity: .43; }
+    .message { min-height: 24px; margin-top: 14px; color: var(--green); text-align: center; font-size: .92rem; }
+    .float { position: absolute; color: var(--gold); font-weight: 800; pointer-events:none; animation: rise .75s ease-out forwards; z-index: 2; }
+    @keyframes rise { from { opacity: 1; transform: translateY(0) scale(.8); } to { opacity: 0; transform: translateY(-70px) scale(1.2); } }
+    footer { color: #8290ad; text-align: center; margin-top: 18px; font-size: .8rem; }
+    @media (max-width: 760px) { .wrap { padding: 18px 12px 30px; } .layout { grid-template-columns: 1fr; } .mine { min-height: 410px; } }
+    @media (max-width: 390px) { .item { grid-template-columns: 42px 1fr; } .item-icon { width: 40px; height:40px; } .buy { grid-column: 2; justify-self: start; } header { align-items: flex-start; } }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <div>
+        <h1>💎 Кристалл-кликер</h1>
+        <div class="subtitle">Добывай кристаллы и развивай свою шахту</div>
+      </div>
+      <button class="reset" id="reset" type="button">Начать заново</button>
+    </header>
+
+    <div class="layout">
+      <section class="panel mine" id="mine" aria-label="Шахта">
+        <div class="balance" id="coins">0</div>
+        <div class="balance-label">🪙 монет</div>
+        <button class="crystal-button" id="clicker" type="button" aria-label="Добыть кристалл">
+          <span class="crystal">💎</span>
+        </button>
+        <div class="tap-hint">Нажимай на кристалл, чтобы добывать монеты</div>
+        <div class="stats">
+          <span class="pill">За клик: <b id="power">1</b></span>
+          <span class="pill">Автодобыча: <b id="perSecond">0</b>/сек</span>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="Магазин улучшений">
+        <div class="shop-head"><h2>🛒 Магазин</h2></div>
+        <p class="shop-note">Покупай улучшения за внутриигровые монеты.</p>
+        <div class="items">
+          <article class="item">
+            <div class="item-icon">⛏️</div>
+            <div><h3>Крепкая кирка <span id="pickaxeLevel">ур. 0</span></h3><p>Каждый клик приносит ещё +1 монету.</p></div>
+            <button class="buy" id="buyPickaxe" type="button">10 🪙</button>
+          </article>
+          <article class="item">
+            <div class="item-icon">🧤</div>
+            <div><h3>Сила шахтёра <span id="gloveLevel">ур. 0</span></h3><p>Увеличивает доход за клик ещё на +5.</p></div>
+            <button class="buy" id="buyGloves" type="button">75 🪙</button>
+          </article>
+          <article class="item">
+            <div class="item-icon">🤖</div>
+            <div><h3>Робот-шахтёр <span id="robotLevel">ур. 0</span></h3><p>Сам добывает монеты каждую секунду.</p></div>
+            <button class="buy" id="buyRobot" type="button">50 🪙</button>
+          </article>
+          <article class="item">
+            <div class="item-icon">💥</div>
+            <div><h3>Мощный заряд <span id="chargeLevel">ур. 0</span></h3><p>Добавляет +25 монет к каждому клику.</p></div>
+            <button class="buy" id="buyCharge" type="button">250 🪙</button>
+          </article>
+        </div>
+        <div class="message" id="message" role="status" aria-live="polite"></div>
+      </section>
+    </div>
+    <footer>Прототип игры · все монеты здесь только игровые</footer>
+  </main>
+
+  <script>
+    const SAVE_KEY = "crystal-clicker-save-v1";
+    const defaults = { coins: 0, pickaxe: 0, gloves: 0, robots: 0, charges: 0 };
+    let state = loadState();
+    let messageTimer;
+
+    function loadState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(SAVE_KEY));
+        if (saved && typeof saved === "object") return { ...defaults, ...saved };
+      } catch (_) { /* start a fresh game if saved data is unreadable */ }
+      return { ...defaults };
+    }
+    function save() { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }
+    function clickPower() { return 1 + state.pickaxe + state.gloves * 5 + state.charges * 25; }
+    function robotRate() { return state.robots; }
+    function costs() {
+      return {
+        pickaxe: Math.floor(10 * Math.pow(1.55, state.pickaxe)),
+        gloves: Math.floor(75 * Math.pow(1.8, state.gloves)),
+        robot: Math.floor(50 * Math.pow(1.6, state.robots)),
+        charge: Math.floor(250 * Math.pow(2, state.charges))
+      };
+    }
+    const $ = id => document.getElementById(id);
+    function showMessage(text) {
+      $("message").textContent = text;
+      clearTimeout(messageTimer);
+      messageTimer = setTimeout(() => { $("message").textContent = ""; }, 1900);
+    }
+    function render() {
+      const cost = costs();
+      $("coins").textContent = Math.floor(state.coins).toLocaleString("ru-RU");
+      $("power").textContent = clickPower().toLocaleString("ru-RU");
+      $("perSecond").textContent = robotRate().toLocaleString("ru-RU");
+      $("pickaxeLevel").textContent = `ур. ${state.pickaxe}`;
+      $("gloveLevel").textContent = `ур. ${state.gloves}`;
+      $("robotLevel").textContent = `ур. ${state.robots}`;
+      $("chargeLevel").textContent = `ур. ${state.charges}`;
+      $("buyPickaxe").textContent = `${cost.pickaxe.toLocaleString("ru-RU")} 🪙`;
+      $("buyGloves").textContent = `${cost.gloves.toLocaleString("ru-RU")} 🪙`;
+      $("buyRobot").textContent = `${cost.robot.toLocaleString("ru-RU")} 🪙`;
+      $("buyCharge").textContent = `${cost.charge.toLocaleString("ru-RU")} 🪙`;
+      $("buyPickaxe").disabled = state.coins < cost.pickaxe;
+      $("buyGloves").disabled = state.coins < cost.gloves;
+      $("buyRobot").disabled = state.coins < cost.robot;
+      $("buyCharge").disabled = state.coins < cost.charge;
+    }
+    function floatText(text, x, y) {
+      const el = document.createElement("span");
+      el.className = "float";
+      el.textContent = text;
+      el.style.left = `${x}px`;
+      el.style.top = `${y}px`;
+      $("mine").appendChild(el);
+      setTimeout(() => el.remove(), 800);
+    }
+    $("clicker").addEventListener("click", event => {
+      const amount = clickPower();
+      state.coins += amount;
+      const box = $("mine").getBoundingClientRect();
+      floatText(`+${amount} 🪙`, event.clientX - box.left, event.clientY - box.top);
+      render(); save();
+    });
+    function purchase(kind, price, upgrade) {
+      if (state.coins < price) return;
+      state.coins -= price;
+      state[kind] += 1;
+      showMessage(upgrade);
+      render(); save();
+    }
+    $("buyPickaxe").addEventListener("click", () => purchase("pickaxe", costs().pickaxe, "Кирка улучшена!"));
+    $("buyGloves").addEventListener("click", () => purchase("gloves", costs().gloves, "Шахтёр стал сильнее!"));
+    $("buyRobot").addEventListener("click", () => purchase("robots", costs().robot, "Робот начал добычу!"));
+    $("buyCharge").addEventListener("click", () => purchase("charges", costs().charge, "Клик стал мощнее!"));
+    $("reset").addEventListener("click", () => {
+      if (!confirm("Начать новую игру? Сохранённый прогресс будет удалён.")) return;
+      state = { ...defaults }; save(); render(); showMessage("Шахта готова к новой игре!");
+    });
+    setInterval(() => {
+      if (state.robots > 0) { state.coins += state.robots; render(); save(); }
+    }, 1000);
+    render();
+  </script>
+</body>
+</html>
